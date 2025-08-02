@@ -22,6 +22,12 @@ export default function Home() {
           <ConnectButton />
         </div>
 
+        {!isConnected ? (
+          <p className="text-pink-700 font-semibold text-center">
+            Por favor, conecte sua carteira para acessar o conteúdo.
+          </p>
+        ) : (
+          <>
         <p className="text-slate-600 text-center">Gerencie e compartilhe seu dinheiro de forma simples e divertida!</p>
         <div className="flex flex-col sm:flex-row gap-4 w-full">
           <Button 
@@ -35,6 +41,8 @@ export default function Home() {
             aoClicar={() => router.push('/NovoCofre')} 
           />
         </div>
+          </>
+        )}
       </div>
     </main>
   );

@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev --turbopack",
-    "build": "next build",
+    "build": "prisma generate && next build",
     "start": "next start",
     "lint": "next lint",
     "compile": "npx hardhat compile",
@@ -13,6 +13,7 @@
     "extract-abi": "node scripts/extract-abi.js"
   },
   "dependencies": {
+    "@prisma/client": "^6.13.0",
     "@rainbow-me/rainbowkit": "^2.2.8",
     "@tanstack/react-query": "^5.84.0",
     "next": "15.4.4",
@@ -29,6 +30,7 @@
     "@types/react-dom": "^19",
     "ethers": "^6.15.0",
     "hardhat": "^2.26.1",
+    "prisma": "^6.13.0",
     "tailwindcss": "^4",
     "typescript": "^5"
   }

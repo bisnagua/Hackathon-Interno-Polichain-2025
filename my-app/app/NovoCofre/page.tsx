@@ -3,11 +3,17 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Button from "@/components/Button";
+import { useAccount } from "wagmi";
 
 export default function CreateVaultPage() {
   const [vaultName, setVaultName] = useState("");
   const [guests, setGuests] = useState<string[]>([""]);
+  const { address } = useAccount();
   const router = useRouter();
+  const [goalEth, setGoalEth] = useState("");
+  const [days, setDays] = useState("");
+  const [hierarchyMode, setHierarchyMode] = useState("1");
+
 
   const handleGuestChange = (index: number, value: string) => {
     const updated = [...guests];
@@ -19,10 +25,58 @@ export default function CreateVaultPage() {
     setGuests([...guests, ""]);
   };
 
-  const handleCreate = () => {
-    console.log("Vault name:", vaultName);
-    console.log("Guests:", guests);
+  const handleCreate = async () => {
+    if (!vaultName.trim()) {
+      alert("Por favor, informe o nome do cofrinho.");
+      return;
+    }
+
+    const metaNumber = Number(goalEth);
+    const prazoNumber = Number(days);
+    const hasValidGuest = guests.some(guest => guest.trim() !== "");
+
+    if (isNaN(metaNumber) || metaNumber <= 0) {
+      alert("A meta deve ser um número maior que zero.");
+      return;
+    }
+
+    if (isNaN(prazoNumber) || prazoNumber <= 0) {
+      alert("O prazo deve ser um número maior que zero.");
+      return;
+    }
+
+    if (!hasValidGuest) {
+    alert("Você precisa adicionar pelo menos uma pessoa.");
+    return;
+    }
+
+        try {
+      const res = await fetch("/api/deploy", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          nome: vaultName,
+          meta: BigInt(metaNumber * 1e18).toString(),
+          dias: prazoNumber,
+          modo: Number(hierarchyMode),
+          curadores: guests.filter(g => g.trim() !== "").map(g => g.trim().toLowerCase()),
+          owner: address,
+      }),
+      });
+
+      const data = await res.json();
+
+      if (res.ok) {
+        alert(`Cofrinho criado com sucesso! Endereço: ${data.address}`);
+        router.push(`/cofre/${data.address}`);
+      } else {
+        alert(`Erro ao criar cofrinho: ${data.error}`);
+      }
+    } catch (error: any) {
+      alert("Erro ao criar cofrinho: " + error.message);
+    }
   };
+
 
   const handleBack = () => {
     router.back();
@@ -30,8 +84,8 @@ export default function CreateVaultPage() {
 
   return (
     <main className="min-h-screen bg-gradient-to-br from-pink-100 to-pink-200 flex items-center justify-center p-4">
-      <div className="bg-white rounded-3xl shadow-2xl p-10 flex flex-col items-center gap-8 w-full max-w-md">
-        <h1 className="text-3xl font-bold text-pink-700 mb-6 text-center">Criar um novo Cofrinho</h1>
+      <div className="bg-white rounded-3xl shadow-2xl p-10 flex flex-col items-stretch gap-1 w-full max-w-md">
+        <h1 className="text-3xl font-bold text-pink-700 mb-6 text-center">Criar um novo cofrinho</h1>
 
         <label className="block mb-4">
           <span className="text-pink-700 font-semibold">Nome do Cofrinho</span>
@@ -44,7 +98,44 @@ export default function CreateVaultPage() {
           />
         </label>
 
-        <div className="mb-4">
+        <label className="block mb-4">
+          <span className="text-pink-700 font-semibold">Meta (ETH)</span>
+          <input
+            type="number"
+            min="0"
+            className="w-full mt-1 p-2 border border-pink-300 rounded"
+            value={goalEth}
+            onChange={(e) => setGoalEth(e.target.value)}
+            placeholder="ex: 5"
+          />
+        </label>
+
+        <label className="block mb-4">
+          <span className="text-pink-700 font-semibold">Prazo (dias)</span>
+          <input
+            type="number"
+            min="0"
+            className="w-full mt-1 p-2 border border-pink-300 rounded"
+            value={days}
+            onChange={(e) => setDays(e.target.value)}
+            placeholder="ex: 30"
+          />
+        </label>
+
+        <label className="block mb-4">
+          <span className="text-pink-700 font-semibold">Modo de Hierarquia</span>
+          <select
+            className="w-full mt-1 p-2 border border-pink-300 rounded"
+            value={hierarchyMode}
+            onChange={(e) => setHierarchyMode(e.target.value)}
+          >
+            <option value="0">Apenas o dono do cofrinho decide</option>
+            <option value="1">Múltiplas pessoas votam</option>
+            <option value="2">Todos votam</option>
+          </select>
+        </label>
+
+        <div className="block mb-4">
           <span className="text-pink-700 font-semibold">Convidar pessoas</span>
           {guests.map((guest, index) => (
             <input

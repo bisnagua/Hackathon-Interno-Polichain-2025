@@ -8,6 +8,7 @@ pragma solidity ^0.8.0;
     uint256 public dataFim;
     bool public votacaoIniciada;
     bool public metaAtingida;
+    string public nome;
 
     enum ModoDeHierarquia{umDono, multiplosCuradores, todos} ModoDeHierarquia public modoDeHierarquia;
     
@@ -38,7 +39,10 @@ pragma solidity ^0.8.0;
         _;
     }
 
-    constructor(uint256 _meta, uint256 numeroDeDias, ModoDeHierarquia _modo, uint256 _numeroDeCuradores){
+    constructor(string memory _nome, uint256 _meta, uint256 numeroDeDias, ModoDeHierarquia _modo, uint256 _numeroDeCuradores){
+        require(_meta > 0, "Meta deve ser maior que zero");
+        require(numeroDeDias > 0, "Prazo deve ser maior que zero");
+        nome = _nome;
         owner = msg.sender;
         meta = _meta;
         dataFim = block.timestamp + (numeroDeDias * 1 days);
@@ -56,7 +60,7 @@ pragma solidity ^0.8.0;
         }
     }   
 
-    function adcionarCurador(address _curador) public apenasOwner{
+    function adicionarCurador(address _curador) public apenasOwner{
         require(modoDeHierarquia == ModoDeHierarquia.multiplosCuradores, "Este modo nao permite multiplos curadores");
         require(!curadores[_curador], "Este endereco ja e um curador");
         require(_curador != owner, "O dono ja e um curador");
@@ -67,6 +71,28 @@ pragma solidity ^0.8.0;
         numCuradoresAdd++;
 
     }
+
+
+    //funções pra alterar informações do constructor e só o dono pode executá-las
+    function alterarNome(string memory _novoNome) public apenasOwner {
+        nome = _novoNome;
+    }
+
+    function alterarMeta(uint256 _novaMeta) public apenasOwner {
+        require(_novaMeta > 0, "Meta deve ser maior que zero");
+        meta = _novaMeta;
+    }
+
+    function alterarDataFim(uint256 _novosDias) public apenasOwner {
+        require(_novosDias > 0, "Dias deve ser maior que zero");
+        dataFim = block.timestamp + (_novosDias * 1 days);
+    }
+
+    function alterarModoHierarquia(ModoDeHierarquia _novoModo) public apenasOwner {
+        modoDeHierarquia = _novoModo;
+    }
+
+    //emitir events?
 
 
 
