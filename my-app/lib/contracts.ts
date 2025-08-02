@@ -3,6 +3,11 @@ export const ContractABI = [
   {
     "inputs": [
       {
+        "internalType": "string",
+        "name": "_nome",
+        "type": "string"
+      },
+      {
         "internalType": "uint256",
         "name": "_meta",
         "type": "uint256"
@@ -34,7 +39,59 @@ export const ContractABI = [
         "type": "address"
       }
     ],
-    "name": "adcionarCurador",
+    "name": "adicionarCurador",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "_novosDias",
+        "type": "uint256"
+      }
+    ],
+    "name": "alterarDataFim",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "_novaMeta",
+        "type": "uint256"
+      }
+    ],
+    "name": "alterarMeta",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "enum Cofrinho.ModoDeHierarquia",
+        "name": "_novoModo",
+        "type": "uint8"
+      }
+    ],
+    "name": "alterarModoHierarquia",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "string",
+        "name": "_novoNome",
+        "type": "string"
+      }
+    ],
+    "name": "alterarNome",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
@@ -150,6 +207,19 @@ export const ContractABI = [
   },
   {
     "inputs": [],
+    "name": "nome",
+    "outputs": [
+      {
+        "internalType": "string",
+        "name": "",
+        "type": "string"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
     "name": "numCuradoresAdd",
     "outputs": [
       {
@@ -243,6 +313,3 @@ export const ContractABI = [
     "type": "function"
   }
 ] as const;
-
-// COLE AQUI O ENDEREÇO DO DEPLOY
-export const CONTRACT_ADDRESS = "SEU_ENDEREÇO_AQUI" as const;
