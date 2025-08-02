@@ -14,7 +14,7 @@ export default function CreateVaultPage() {
   const [goalEth, setGoalEth] = useState("");
   const [days, setDays] = useState("");
   const [hierarchyMode, setHierarchyMode] = useState("1");
-
+  const [unidade, setUnidade] = useState("2"); // 0=Wei,1=Gwei,2=Ether (default Ether)
 
   const handleGuestChange = (index: number, value: string) => {
     const updated = [...guests];
@@ -25,7 +25,6 @@ export default function CreateVaultPage() {
   const addGuestField = () => {
     setGuests([...guests, ""]);
   };
-
 
   const handleCreate = async () => {
     if (!vaultName.trim()) {
@@ -53,13 +52,22 @@ export default function CreateVaultPage() {
     }
 
     try {
-      // 1. Faz deploy via frontend (carteira do usuário)
+      let metaBigInt: bigint;
+      if (unidade === "0") {
+        metaBigInt = BigInt(metaNumber);
+      } else if (unidade === "1") {
+        metaBigInt = BigInt(metaNumber * 1e9);
+      } else {
+        metaBigInt = BigInt(metaNumber * 1e18);
+      }
+
       const addressDeployed = await deployCofrinhoFrontend({
         nome: vaultName,
-        meta: BigInt(metaNumber * 1e18), // ETH → wei
+        meta: metaBigInt,
         dias: prazoNumber,
         modo: Number(hierarchyMode),
         curadores: guests.filter(g => g.trim() !== "").map(g => g.trim().toLowerCase()),
+        unidade: Number(unidade),
       });
 
       alert(`Cofrinho deployado com sucesso! Endereço: ${addressDeployed}`);
@@ -87,7 +95,6 @@ export default function CreateVaultPage() {
     }
   };
 
-
   const handleBack = () => {
     router.back();
   };
@@ -95,7 +102,9 @@ export default function CreateVaultPage() {
   return (
     <main className="min-h-screen bg-gradient-to-br from-pink-100 to-pink-200 flex items-center justify-center p-4">
       <div className="bg-white rounded-3xl shadow-2xl p-10 flex flex-col items-stretch gap-1 w-full max-w-md">
-        <h1 className="text-3xl font-bold text-pink-700 mb-6 text-center">Criar um novo cofrinho</h1>
+        <h1 className="text-3xl font-bold text-pink-700 mb-6 text-center">
+          Criar um novo cofrinho
+        </h1>
 
         <label className="block mb-4">
           <span className="text-pink-700 font-semibold">Nome do Cofrinho</span>
@@ -109,15 +118,27 @@ export default function CreateVaultPage() {
         </label>
 
         <label className="block mb-4">
-          <span className="text-pink-700 font-semibold">Meta (ETH)</span>
-          <input
-            type="number"
-            min="0"
-            className="w-full mt-1 p-2 border border-pink-300 rounded"
-            value={goalEth}
-            onChange={(e) => setGoalEth(e.target.value)}
-            placeholder="ex: 5"
-          />
+          <span className="text-pink-700 font-semibold">Meta</span>
+          <div className="flex gap-2">
+            <input
+              type="number"
+              min="0"
+              className="flex-grow mt-1 p-2 border border-pink-300 rounded"
+              value={goalEth}
+              onChange={(e) => setGoalEth(e.target.value)}
+              placeholder="ex: 5"
+            />
+            <select
+              className="mt-1 p-2 border border-pink-300 rounded w-32"
+              value={unidade}
+              onChange={(e) => setUnidade(e.target.value)}
+              title="Unidade da meta"
+            >
+              <option value="0">Wei</option>
+              <option value="1">Gwei</option>
+              <option value="2">Ether</option>
+            </select>
+          </div>
         </label>
 
         <label className="block mb-4">

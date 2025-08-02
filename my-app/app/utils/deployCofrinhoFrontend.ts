@@ -7,13 +7,15 @@ export async function deployCofrinhoFrontend({
   meta,
   dias,
   modo,
-  curadores
+  curadores,
+  unidade,
 }: {
   nome: string;
   meta: bigint;
   dias: number;
   modo: number;
   curadores: string[];
+  unidade: number; // 0 = Wei, 1 = Gwei, 2 = Ether
 }) {
   if (!window.ethereum) {
     throw new Error("MetaMask não detectado");
@@ -28,7 +30,7 @@ export async function deployCofrinhoFrontend({
     signer
   );
 
-  const cofrinho = await factory.deploy(nome, meta, dias, modo, curadores.length);
+  const cofrinho = await factory.deploy(nome, meta, unidade, dias, modo, curadores.length);
 
   console.log("Esperando deploy confirmar...");
   await cofrinho.waitForDeployment();
