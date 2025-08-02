@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Button from "@/components/Button";
 import { useAccount } from "wagmi";
+import { deployCofrinhoFrontend } from "../utils/deployCofrinhoFrontend";
 
 export default function CreateVaultPage() {
   const [vaultName, setVaultName] = useState("");
@@ -24,6 +25,7 @@ export default function CreateVaultPage() {
   const addGuestField = () => {
     setGuests([...guests, ""]);
   };
+
 
   const handleCreate = async () => {
     if (!vaultName.trim()) {
@@ -46,31 +48,39 @@ export default function CreateVaultPage() {
     }
 
     if (!hasValidGuest) {
-    alert("Você precisa adicionar pelo menos uma pessoa.");
-    return;
+      alert("Você precisa adicionar pelo menos uma pessoa.");
+      return;
     }
 
-        try {
-      const res = await fetch("/api/deploy", {
+    try {
+      // 1. Faz deploy via frontend (carteira do usuário)
+      const addressDeployed = await deployCofrinhoFrontend({
+        nome: vaultName,
+        meta: BigInt(metaNumber * 1e18), // ETH → wei
+        dias: prazoNumber,
+        modo: Number(hierarchyMode),
+        curadores: guests.filter(g => g.trim() !== "").map(g => g.trim().toLowerCase()),
+      });
+
+      alert(`Cofrinho deployado com sucesso! Endereço: ${addressDeployed}`);
+
+      const res = await fetch("/api/cofrinhos", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           nome: vaultName,
-          meta: BigInt(metaNumber * 1e18).toString(),
-          dias: prazoNumber,
-          modo: Number(hierarchyMode),
-          curadores: guests.filter(g => g.trim() !== "").map(g => g.trim().toLowerCase()),
+          address: addressDeployed,
           owner: address,
-      }),
+          curadores: guests.filter(g => g.trim() !== "").map(g => g.trim().toLowerCase()),
+        }),
       });
 
       const data = await res.json();
 
       if (res.ok) {
-        alert(`Cofrinho criado com sucesso! Endereço: ${data.address}`);
-        router.push(`/cofre/${data.address}`);
+        router.push(`/cofre/${addressDeployed}`);
       } else {
-        alert(`Erro ao criar cofrinho: ${data.error}`);
+        alert(`Erro ao salvar no banco: ${data.error}`);
       }
     } catch (error: any) {
       alert("Erro ao criar cofrinho: " + error.message);
