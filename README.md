@@ -1,6 +1,6 @@
 # Hackathon-Interno-Polichain-2025
 
-Bem-vindo ao projeto Cofrinho Compartilhado 🐷 - link do site: [cofrinho-compartilhado](cofrinho-compartilhado.vercel.app)
+Bem-vindo ao projeto Cofrinho Compartilhado 🐷 - link do site: <a href=“cofrinho-compartilhado.vercel.app“>cofrinho-compartilhado</a>
 
 ##  Sobre o projeto
 
