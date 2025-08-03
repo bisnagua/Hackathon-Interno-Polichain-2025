@@ -9,13 +9,8 @@ export const ContractABI = [
       },
       {
         "internalType": "uint256",
-        "name": "_meta",
+        "name": "_metaEmWei",
         "type": "uint256"
-      },
-      {
-        "internalType": "enum Cofrinho.Unidade",
-        "name": "_unidade",
-        "type": "uint8"
       },
       {
         "internalType": "uint256",
@@ -179,7 +174,7 @@ export const ContractABI = [
     "inputs": [
       {
         "internalType": "uint256",
-        "name": "_novaMeta",
+        "name": "_novaMetaEmWei",
         "type": "uint256"
       }
     ],
@@ -475,6 +470,13 @@ export const ContractABI = [
     "type": "function"
   },
   {
+    "inputs": [],
+    "name": "sacar",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
     "inputs": [
       {
         "internalType": "uint256",
@@ -521,19 +523,6 @@ export const ContractABI = [
         "internalType": "uint256",
         "name": "",
         "type": "uint256"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "unidade",
-    "outputs": [
-      {
-        "internalType": "enum Cofrinho.Unidade",
-        "name": "",
-        "type": "uint8"
       }
     ],
     "stateMutability": "view",

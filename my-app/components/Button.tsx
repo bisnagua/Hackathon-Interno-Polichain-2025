@@ -5,6 +5,7 @@ type BotaoProps = {
   aoClicar?: () => void;
   children?: React.ReactNode; 
   cor?: string;
+  disabled?: boolean;
 };
 
 export default function Button({

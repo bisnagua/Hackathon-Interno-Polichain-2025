@@ -28,3 +28,21 @@ model curadores {
   cofrinho   cofrinhos  @relation(fields: [cofrinhoId], references: [id])
   cofrinhoId Int
 }
+
+model Proposal {
+  id           String        @id @default(cuid())
+  vaultAddress String        // Endereço do contrato cofrinho
+  title        String        // Descrição da proposta
+  createdAt    DateTime      @default(now())
+  votes        ProposalVote[]
+}
+
+model ProposalVote {
+  id         String   @id @default(cuid())
+  proposalId String
+  wallet     String   // Endereço da carteira que votou
+
+  proposal   Proposal @relation(fields: [proposalId], references: [id])
+
+  @@unique([proposalId, wallet]) // Uma carteira só pode votar uma vez por proposta
+}

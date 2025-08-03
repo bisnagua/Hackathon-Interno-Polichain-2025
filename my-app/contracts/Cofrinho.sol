@@ -1,10 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
- contract Cofrinho {
+contract Cofrinho {
     address public owner;
     uint256 public meta;
-    enum Unidade { Wei, Gwei, Ether} Unidade public unidade;
     uint256 public totalArrecadado;
     uint256 public dataFim;
     bool public votacaoIniciada;
@@ -12,15 +11,15 @@ pragma solidity ^0.8.0;
     bool public metaAtingida;
     bool public retiradoAntesDaMeta;
     string public nome;
-    
-    enum ModoDeHierarquia{umDono, multiplosCuradores, todos} ModoDeHierarquia public modoDeHierarquia;
-    
+
+    enum ModoDeHierarquia { umDono, multiplosCuradores, todos }
+    ModoDeHierarquia public modoDeHierarquia;
+
     uint256 public numeroDeCuradores;
     uint256 public numCuradoresAdd = 0;
-    mapping ( address => bool) public curadores;
+    mapping(address => bool) public curadores;
 
-
-    struct sugestao{
+    struct sugestao {
         bool ehContrato;
         address endereco;
         string descricao;
@@ -34,94 +33,88 @@ pragma solidity ^0.8.0;
     mapping(address => uint256) public doacoes;
     mapping(address => bool) public jaVotou;
     mapping(address => bool) public votosRADM; // Votos retirar antes da meta
-    mapping(address => bool ) public jaVotouRADM; // Retirar antes da meta
+    mapping(address => bool) public jaVotouRADM; // Retirar antes da meta
     uint256 public votosFavoraveisRADM;
     uint256 public numVotosRADM;
-    mapping(address => bool ) public jaSugeriu;
+    mapping(address => bool) public jaSugeriu;
 
-    modifier apenasOwner(){
+    modifier apenasOwner() {
         require(msg.sender == owner, "Apenas o dono pode executar esta funcao");
         _;
     }
 
-    modifier apenasCurador(){
+    modifier apenasCurador() {
         require(curadores[msg.sender] == true || msg.sender == owner, "Apenas o curador pode executar esta funcao");
         _;
     }
 
-    constructor(string memory _nome, uint256 _meta, Unidade _unidade, uint256 numeroDeDias, ModoDeHierarquia _modo, uint256 _numeroDeCuradores){
+    constructor(
+        string memory _nome,
+        uint256 _metaEmWei,
+        uint256 numeroDeDias,
+        ModoDeHierarquia _modo,
+        uint256 _numeroDeCuradores
+    ) {
+        require(_metaEmWei > 0, "Meta deve ser maior que zero");
+
         owner = msg.sender;
-        meta = _meta;
         nome = _nome;
-        unidade = _unidade;
-        if (unidade == Unidade.Wei) {
-            meta = _meta;
-        } else if (unidade == Unidade.Gwei) {
-            meta = _meta * 1e9; // 1 Gwei = 1e9 Wei
-        } else if (unidade == Unidade.Ether) {
-            meta = _meta * 1e18; // 1 Ether = 1e18 Wei
-        }
+        meta = _metaEmWei; // Valor já em wei
+
         dataFim = block.timestamp + (numeroDeDias * 1 days);
         modoDeHierarquia = _modo;
 
         numeroDeCuradores = 1;
         curadores[owner] = true;
 
-        if(modoDeHierarquia == ModoDeHierarquia.umDono){
+        if (modoDeHierarquia == ModoDeHierarquia.umDono) {
             numeroDeCuradores = 1;
-            curadores[owner]=true;
-        }
-        else if(modoDeHierarquia == ModoDeHierarquia.multiplosCuradores){
-            require(_numeroDeCuradores> 1, "Numero de curadores deve ser maior que zero");
+        } else if (modoDeHierarquia == ModoDeHierarquia.multiplosCuradores) {
+            require(_numeroDeCuradores > 1, "Numero de curadores deve ser maior que um");
             numeroDeCuradores = _numeroDeCuradores;
-            curadores[owner] = true;
         }
-    }   
-    
-    
-    function adcionarCurador(address _curador) public apenasOwner{
+    }
+
+    function adcionarCurador(address _curador) public apenasOwner {
         require(modoDeHierarquia == ModoDeHierarquia.multiplosCuradores, "Este modo nao permite multiplos curadores");
         require(!curadores[_curador], "Este endereco ja e um curador");
         require(_curador != owner, "O dono ja e um curador");
-        
+
         require(numCuradoresAdd < numeroDeCuradores - 1, "Numero maximo de curadores atingido");
 
         curadores[_curador] = true;
         numCuradoresAdd++;
-
     }
 
     event doacaoRecebida(address doador, uint256 valor);
 
-    function doar() public payable{
+    function doar() public payable {
         require(msg.value > 0, "O valor eh invalido");
         require(block.timestamp < dataFim && !votacaoIniciada, "Periodo de doacoes encerrado");
 
         doacoes[msg.sender] += msg.value;
         totalArrecadado += msg.value;
 
-        if (modoDeHierarquia == ModoDeHierarquia.todos && !curadores[msg.sender])
-            {
-                curadores[msg.sender] = true;
-                numeroDeCuradores++;
-            }
+        if (modoDeHierarquia == ModoDeHierarquia.todos && !curadores[msg.sender]) {
+            curadores[msg.sender] = true;
+            numeroDeCuradores++;
+        }
 
         emit doacaoRecebida(msg.sender, msg.value);
 
-        if( totalArrecadado >= meta && !metaAtingida)
+        if (totalArrecadado >= meta && !metaAtingida)
             metaAtingida = true;
-
     }
 
     event sugestaoAdicionada(uint256 id, string descricao, address autor);
-    
-    function NovaSugestao(string memory _descricao, bool ehContrato, address _endereco) private{
-        require (!votacaoIniciada, "Votacao iniciada, periodo de sugestoes encerrado");
-        require (!jaSugeriu[msg.sender], "Ja sugeriu");
-        if(ehContrato){
+
+    function NovaSugestao(string memory _descricao, bool ehContrato, address _endereco) private {
+        require(!votacaoIniciada, "Votacao iniciada, periodo de sugestoes encerrado");
+        require(!jaSugeriu[msg.sender], "Ja sugeriu");
+        if (ehContrato) {
             require(_endereco != address(0), "O endereco do contrato nao eh valido");
         }
-    
+
         sugestao storage novaSugestao = sugestoes.push();
         novaSugestao.ehContrato = ehContrato;
         novaSugestao.endereco = _endereco;
@@ -130,85 +123,78 @@ pragma solidity ^0.8.0;
         novaSugestao.votos = 0;
 
         emit sugestaoAdicionada(sugestoes.length - 1, _descricao, msg.sender);
-
     }
 
-    function adicionarSugestaoSemContrato(string memory _descricao) public apenasCurador{
+    function adicionarSugestaoSemContrato(string memory _descricao) public apenasCurador {
         NovaSugestao(_descricao, false, address(0));
     }
 
-    function adicionarSugestaoComContrato(string memory _descricao, address _endereco) public apenasCurador{
+    function adicionarSugestaoComContrato(string memory _descricao, address _endereco) public apenasCurador {
         NovaSugestao(_descricao, true, _endereco);
     }
 
-    
-    function iniciarVotacao() public apenasCurador{
+    function iniciarVotacao() public apenasCurador {
         require(!votacaoIniciada, "Votacao ja iniciada");
         require(sugestoes.length > 0, "Nao ha sugestoes ");
-        
-        if( metaAtingida || block.timestamp > dataFim || retiradoAntesDaMeta)
+
+        if (metaAtingida || block.timestamp > dataFim || retiradoAntesDaMeta)
             votacaoIniciada = true;
     }
 
-    event votoRecebido (address votante, uint256 idSugestao);
+    event votoRecebido(address votante, uint256 idSugestao);
 
-    function votar(uint256 _idSugestao) public apenasCurador{
-        require (votacaoIniciada, "Votacao nao iniciada");
-        require (sugestoes.length > 0, "Nao ha sugestoes para votar");
+    function votar(uint256 _idSugestao) public apenasCurador {
+        require(votacaoIniciada, "Votacao nao iniciada");
+        require(sugestoes.length > 0, "Nao ha sugestoes para votar");
         require(!jaVotou[msg.sender], "Ja votou");
-  
+
         sugestao storage _sugestao = sugestoes[_idSugestao];
         require(!_sugestao.votantes[msg.sender], "Voce ja votou nesta sugestao");
         _sugestao.votos += 1;
         _sugestao.votantes[msg.sender] = true;
         jaVotou[msg.sender] = true;
-        
-        
+
         emit votoRecebido(msg.sender, _idSugestao);
-        
     }
 
     function votarRADM(bool _voto) public apenasCurador {
-        require (votacaoRADMiniciada, "A votacao para retirar antes da meta nao foi iniciada");
-        require (!jaVotouRADM[msg.sender], "Ja votou para retirar antes da meta");
+        require(votacaoRADMiniciada, "A votacao para retirar antes da meta nao foi iniciada");
+        require(!jaVotouRADM[msg.sender], "Ja votou para retirar antes da meta");
 
         votosRADM[msg.sender] = _voto;
         jaVotouRADM[msg.sender] = true;
         numVotosRADM++;
-        if ( _voto)
+        if (_voto)
             votosFavoraveisRADM++;
-            
     }
 
     function retirarAntesDaMeta() public apenasCurador {
-        require (!metaAtingida && block.timestamp < dataFim, "Nao eh possivel retirar antes da meta");
-        require (totalArrecadado > 0, "Nao ha o que retirar");
-
-        require(numVotosRADM == (numeroDeCuradores), "Nem todos os curadores votaram ainda");
+        require(!metaAtingida && block.timestamp < dataFim, "Nao eh possivel retirar antes da meta");
+        require(totalArrecadado > 0, "Nao ha o que retirar");
+        require(numVotosRADM == numeroDeCuradores, "Nem todos os curadores votaram ainda");
 
         votacaoRADMiniciada = false;
-       
-       if (votosFavoraveisRADM >= (numeroDeCuradores/2 + 1)){
+
+        if (votosFavoraveisRADM >= (numeroDeCuradores / 2 + 1)) {
             retiradoAntesDaMeta = true;
             iniciarVotacao();
         }
-        
     }
 
-    function iniciarVotacaoRADM() public apenasOwner{
-        require (!votacaoRADMiniciada, "A votacao para retirar antes da meta ja foi iniciada");
-        require (!metaAtingida && block.timestamp < dataFim, "Nao eh possivel retirar antes da meta");
+    function iniciarVotacaoRADM() public apenasOwner {
+        require(!votacaoRADMiniciada, "A votacao para retirar antes da meta ja foi iniciada");
+        require(!metaAtingida && block.timestamp < dataFim, "Nao eh possivel retirar antes da meta");
 
         votacaoRADMiniciada = true;
     }
 
-    event audicaoConcluida ( uint256 id, string descricao);
+    event audicaoConcluida(uint256 id, string descricao);
 
     function auditarVotos() public apenasCurador {
-        require (votacaoIniciada, "Votacao ainda nao iniciada");
-        
+        require(votacaoIniciada, "Votacao ainda nao iniciada");
+
         uint256 votosTotais = 0;
-        for (uint256 i = 0; i < sugestoes.length; i++){
+        for (uint256 i = 0; i < sugestoes.length; i++) {
             votosTotais += sugestoes[i].votos;
         }
 
@@ -217,41 +203,33 @@ pragma solidity ^0.8.0;
         uint256 idVencedor = 0;
         uint256 maisVotos = 0;
 
-        for (uint256 i = 0; i < sugestoes.length; i++) 
-        {
-            if ( sugestoes[i].votos > maisVotos)
-            {
+        for (uint256 i = 0; i < sugestoes.length; i++) {
+            if (sugestoes[i].votos > maisVotos) {
                 maisVotos = sugestoes[i].votos;
                 idVencedor = i;
             }
         }
 
-        emit audicaoConcluida ( idVencedor, sugestoes[idVencedor].descricao);
-        
+        emit audicaoConcluida(idVencedor, sugestoes[idVencedor].descricao);
 
-        if (sugestoes[idVencedor].ehContrato)
-        {
-            (bool success, ) = (sugestoes[idVencedor].endereco).call{value: totalArrecadado}("");
-        require(success, "Transfer failed");
-        }
-        else {
+        if (sugestoes[idVencedor].ehContrato) {
+            (bool success, ) = sugestoes[idVencedor].endereco.call{value: totalArrecadado}("");
+            require(success, "Transfer failed");
+        } else {
             (bool success, ) = owner.call{value: totalArrecadado}("");
-        require(success, "Transfer failed");
+            require(success, "Transfer failed");
         }
-        
-        //resetar o estado ???
-    
-        
+
+        // Estado finalizado (a lógica de reset pode ser discutida depois)
     }
 
-        //funções pra alterar informações do constructor e só o dono pode executá-las
     function alterarNome(string memory _novoNome) public apenasOwner {
         nome = _novoNome;
     }
 
-    function alterarMeta(uint256 _novaMeta) public apenasOwner {
-        require(_novaMeta > 0, "Meta deve ser maior que zero");
-        meta = _novaMeta;
+    function alterarMeta(uint256 _novaMetaEmWei) public apenasOwner {
+        require(_novaMetaEmWei > 0, "Meta deve ser maior que zero");
+        meta = _novaMetaEmWei;
     }
 
     function alterarDataFim(uint256 _novosDias) public apenasOwner {
@@ -263,5 +241,15 @@ pragma solidity ^0.8.0;
         modoDeHierarquia = _novoModo;
     }
 
-    //emitir events?
- }
+    function sacar() public apenasOwner {
+        require(metaAtingida, "A meta ainda nao foi atingida");
+        require(address(this).balance > 0, "Nao ha fundos para sacar");
+        require(!retiradoAntesDaMeta, "Ja foi retirado antes da meta");
+
+        uint256 valor = address(this).balance;
+        (bool success, ) = owner.call{value: valor}("");
+        require(success, "Transferencia falhou");
+
+        retiradoAntesDaMeta = true; // para evitar sacar de novo
+    }
+}

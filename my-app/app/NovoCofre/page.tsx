@@ -1,10 +1,13 @@
 'use client';
 
+
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Button from "@/components/Button";
 import { useAccount } from "wagmi";
+import { ethers } from "ethers";
 import { deployCofrinhoFrontend } from "../utils/deployCofrinhoFrontend";
+import { parseUnits } from "viem";
 
 export default function CreateVaultPage() {
   const [vaultName, setVaultName] = useState("");
@@ -14,7 +17,6 @@ export default function CreateVaultPage() {
   const [goalEth, setGoalEth] = useState("");
   const [days, setDays] = useState("");
   const [hierarchyMode, setHierarchyMode] = useState("1");
-  const [unidade, setUnidade] = useState("2"); // 0=Wei,1=Gwei,2=Ether (default Ether)
 
   const handleGuestChange = (index: number, value: string) => {
     const updated = [...guests];
@@ -22,9 +24,11 @@ export default function CreateVaultPage() {
     setGuests(updated);
   };
 
+
   const addGuestField = () => {
     setGuests([...guests, ""]);
   };
+
 
   const handleCreate = async () => {
     if (!vaultName.trim()) {
@@ -32,45 +36,49 @@ export default function CreateVaultPage() {
       return;
     }
 
+
     const metaNumber = Number(goalEth);
     const prazoNumber = Number(days);
     const hasValidGuest = guests.some(guest => guest.trim() !== "");
+
 
     if (isNaN(metaNumber) || metaNumber <= 0) {
       alert("A meta deve ser um número maior que zero.");
       return;
     }
 
+
     if (isNaN(prazoNumber) || prazoNumber <= 0) {
       alert("O prazo deve ser um número maior que zero.");
       return;
     }
+
 
     if (!hasValidGuest) {
       alert("Você precisa adicionar pelo menos uma pessoa.");
       return;
     }
 
+
     try {
-      let metaBigInt: bigint;
-      if (unidade === "0") {
-        metaBigInt = BigInt(metaNumber);
-      } else if (unidade === "1") {
-        metaBigInt = BigInt(metaNumber * 1e9);
-      } else {
-        metaBigInt = BigInt(metaNumber * 1e18);
-      }
+
+      const cleanedCuradores = guests
+        .filter(g => g.trim() !== "")
+        .map(g => g.trim().toLowerCase());
+
+      const metaBigInt = parseUnits(goalEth || "0", 18);
 
       const addressDeployed = await deployCofrinhoFrontend({
         nome: vaultName,
         meta: metaBigInt,
         dias: prazoNumber,
         modo: Number(hierarchyMode),
-        curadores: guests.filter(g => g.trim() !== "").map(g => g.trim().toLowerCase()),
-        unidade: Number(unidade),
+        curadores: cleanedCuradores,
       });
 
+
       alert(`Cofrinho deployado com sucesso! Endereço: ${addressDeployed}`);
+
 
       const res = await fetch("/api/cofrinhos", {
         method: "POST",
@@ -79,14 +87,16 @@ export default function CreateVaultPage() {
           nome: vaultName,
           address: addressDeployed,
           owner: address,
-          curadores: guests.filter(g => g.trim() !== "").map(g => g.trim().toLowerCase()),
+          curadores: cleanedCuradores,
         }),
       });
 
+
       const data = await res.json();
 
+
       if (res.ok) {
-        router.push(`/cofre/${addressDeployed}`);
+        router.push(`/AcessarCofre/${addressDeployed}`);
       } else {
         alert(`Erro ao salvar no banco: ${data.error}`);
       }
@@ -95,9 +105,11 @@ export default function CreateVaultPage() {
     }
   };
 
+
   const handleBack = () => {
     router.back();
   };
+
 
   return (
     <main className="min-h-screen bg-gradient-to-br from-pink-100 to-pink-200 flex items-center justify-center p-4">
@@ -105,6 +117,7 @@ export default function CreateVaultPage() {
         <h1 className="text-3xl font-bold text-pink-700 mb-6 text-center">
           Criar um novo cofrinho
         </h1>
+
 
         <label className="block mb-4">
           <span className="text-pink-700 font-semibold">Nome do Cofrinho</span>
@@ -117,6 +130,7 @@ export default function CreateVaultPage() {
           />
         </label>
 
+
         <label className="block mb-4">
           <span className="text-pink-700 font-semibold">Meta</span>
           <div className="flex gap-2">
@@ -128,18 +142,9 @@ export default function CreateVaultPage() {
               onChange={(e) => setGoalEth(e.target.value)}
               placeholder="ex: 5"
             />
-            <select
-              className="mt-1 p-2 border border-pink-300 rounded w-32"
-              value={unidade}
-              onChange={(e) => setUnidade(e.target.value)}
-              title="Unidade da meta"
-            >
-              <option value="0">Wei</option>
-              <option value="1">Gwei</option>
-              <option value="2">Ether</option>
-            </select>
           </div>
         </label>
+
 
         <label className="block mb-4">
           <span className="text-pink-700 font-semibold">Prazo (dias)</span>
@@ -153,6 +158,7 @@ export default function CreateVaultPage() {
           />
         </label>
 
+
         <label className="block mb-4">
           <span className="text-pink-700 font-semibold">Modo de Hierarquia</span>
           <select
@@ -165,6 +171,7 @@ export default function CreateVaultPage() {
             <option value="2">Todos votam</option>
           </select>
         </label>
+
 
         <div className="block mb-4">
           <span className="text-pink-700 font-semibold">Convidar pessoas</span>
@@ -186,6 +193,7 @@ export default function CreateVaultPage() {
             + Adicionar outra pessoa
           </button>
         </div>
+
 
         <div className="flex flex-col gap-4 mt-6">
           <Button texto="Criar" aoClicar={handleCreate} cor="bg-pink-500 text-white" />
